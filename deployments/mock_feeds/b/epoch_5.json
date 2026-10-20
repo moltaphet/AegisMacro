@@ -1,0 +1,10 @@
+{
+  "schema": "aegismacro.feed.v1",
+  "feed": "CENTRAL_BANK_MACRO_MIRROR",
+  "epoch": 5,
+  "risk_level": 0,
+  "event_id": "MOCK-E05",
+  "headline": "MOCK: markets stable, no adverse action",
+  "published_at": "2026-10-05T09:00:00Z",
+  "mock": true
+}

@@ -1,0 +1,294 @@
+{
+  "ctor": {
+    "kwparams": {},
+    "params": [
+      [
+        "feed_base_a",
+        "string"
+      ],
+      [
+        "feed_base_b",
+        "string"
+      ],
+      [
+        "feed_base_c",
+        "string"
+      ],
+      [
+        "operator_a",
+        "string"
+      ],
+      [
+        "operator_b",
+        "string"
+      ],
+      [
+        "operator_c",
+        "string"
+      ],
+      [
+        "watchtower_bond",
+        "int"
+      ]
+    ]
+  },
+  "methods": {
+    "accept_governor": {
+      "kwparams": {},
+      "params": [],
+      "payable": false,
+      "readonly": false,
+      "ret": "null"
+    },
+    "borrow": {
+      "kwparams": {},
+      "params": [
+        [
+          "amount",
+          "int"
+        ]
+      ],
+      "payable": false,
+      "readonly": false,
+      "ret": "string"
+    },
+    "cancel_feed_rotation": {
+      "kwparams": {},
+      "params": [
+        [
+          "slot",
+          "int"
+        ]
+      ],
+      "payable": false,
+      "readonly": false,
+      "ret": "null"
+    },
+    "claim_payout": {
+      "kwparams": {},
+      "params": [],
+      "payable": false,
+      "readonly": false,
+      "ret": "string"
+    },
+    "claimable_of": {
+      "kwparams": {},
+      "params": [
+        [
+          "addr_hex",
+          "string"
+        ]
+      ],
+      "readonly": true,
+      "ret": "string"
+    },
+    "deposit_collateral": {
+      "kwparams": {},
+      "params": [],
+      "payable": true,
+      "readonly": false,
+      "ret": "string"
+    },
+    "execute_feed_rotation": {
+      "kwparams": {},
+      "params": [
+        [
+          "slot",
+          "int"
+        ]
+      ],
+      "payable": false,
+      "readonly": false,
+      "ret": "null"
+    },
+    "get_feed_sources": {
+      "kwparams": {},
+      "params": [],
+      "readonly": true,
+      "ret": "array"
+    },
+    "get_position": {
+      "kwparams": {},
+      "params": [
+        [
+          "addr_hex",
+          "string"
+        ]
+      ],
+      "readonly": true,
+      "ret": "dict"
+    },
+    "get_protocol_state": {
+      "kwparams": {},
+      "params": [],
+      "readonly": true,
+      "ret": "dict"
+    },
+    "get_report": {
+      "kwparams": {},
+      "params": [
+        [
+          "report_id",
+          "int"
+        ]
+      ],
+      "readonly": true,
+      "ret": "dict"
+    },
+    "get_report_count": {
+      "kwparams": {},
+      "params": [],
+      "readonly": true,
+      "ret": "int"
+    },
+    "get_risk_status": {
+      "kwparams": {},
+      "params": [],
+      "readonly": true,
+      "ret": "dict"
+    },
+    "get_risk_tiers": {
+      "kwparams": {},
+      "params": [],
+      "readonly": true,
+      "ret": "array"
+    },
+    "get_watchtower": {
+      "kwparams": {},
+      "params": [
+        [
+          "addr_hex",
+          "string"
+        ]
+      ],
+      "readonly": true,
+      "ret": "dict"
+    },
+    "is_valid_feed_url": {
+      "kwparams": {},
+      "params": [
+        [
+          "slot",
+          "int"
+        ],
+        [
+          "url",
+          "string"
+        ]
+      ],
+      "readonly": true,
+      "ret": "string"
+    },
+    "preview_aggregate": {
+      "kwparams": {},
+      "params": [
+        [
+          "observations_json",
+          "string"
+        ],
+        [
+          "claimed_level",
+          "int"
+        ],
+        [
+          "epoch",
+          "int"
+        ]
+      ],
+      "readonly": true,
+      "ret": "dict"
+    },
+    "propose_feed_rotation": {
+      "kwparams": {},
+      "params": [
+        [
+          "slot",
+          "int"
+        ],
+        [
+          "new_base_url",
+          "string"
+        ],
+        [
+          "new_operator_hex",
+          "string"
+        ]
+      ],
+      "payable": false,
+      "readonly": false,
+      "ret": "int"
+    },
+    "propose_governor": {
+      "kwparams": {},
+      "params": [
+        [
+          "new_governor_hex",
+          "string"
+        ]
+      ],
+      "payable": false,
+      "readonly": false,
+      "ret": "null"
+    },
+    "repay": {
+      "kwparams": {},
+      "params": [],
+      "payable": true,
+      "readonly": false,
+      "ret": "dict"
+    },
+    "report_risk": {
+      "kwparams": {},
+      "params": [
+        [
+          "epoch",
+          "int"
+        ],
+        [
+          "claimed_level",
+          "int"
+        ]
+      ],
+      "payable": true,
+      "readonly": false,
+      "ret": "dict"
+    },
+    "seed_liquidity": {
+      "kwparams": {},
+      "params": [],
+      "payable": true,
+      "readonly": false,
+      "ret": "string"
+    },
+    "whoami": {
+      "kwparams": {},
+      "params": [],
+      "readonly": true,
+      "ret": "string"
+    },
+    "withdraw": {
+      "kwparams": {},
+      "params": [
+        [
+          "amount",
+          "int"
+        ]
+      ],
+      "payable": false,
+      "readonly": false,
+      "ret": "string"
+    },
+    "withdraw_liquidity": {
+      "kwparams": {},
+      "params": [
+        [
+          "shares",
+          "int"
+        ]
+      ],
+      "payable": false,
+      "readonly": false,
+      "ret": "string"
+    }
+  }
+}

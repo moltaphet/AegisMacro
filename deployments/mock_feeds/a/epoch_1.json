@@ -1,0 +1,10 @@
+{
+  "schema": "aegismacro.feed.v1",
+  "feed": "SEC_REGULATORY_MIRROR",
+  "epoch": 1,
+  "risk_level": 1,
+  "event_id": "MOCK-E01",
+  "headline": "MOCK: regulator signals heightened scrutiny of leveraged lending",
+  "published_at": "2026-10-01T09:00:00Z",
+  "mock": true
+}

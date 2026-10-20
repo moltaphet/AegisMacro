@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  --color-alabaster: #f8fafc;
+  --color-ink: #0f172a;
+  --color-ink-soft: #334155;
+  --color-ink-mute: #64748b;
+  --color-silver: #e2e8f0;
+  --color-silver-deep: #cbd5e1;
+  --color-normal: #059669;
+  --color-elevated: #d97706;
+  --color-critical: #dc2626;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+:root {
+  --tier: var(--color-normal);
+  --tier-soft: rgb(5 150 105 / 0.1);
+}
+:root[data-tier="1"] {
+  --tier: var(--color-elevated);
+  --tier-soft: rgb(217 119 6 / 0.12);
+}
+:root[data-tier="2"] {
+  --tier: var(--color-critical);
+  --tier-soft: rgb(220 38 38 / 0.1);
+}
+
+html {
+  background: var(--color-alabaster);
+  color: var(--color-ink);
+  color-scheme: light;
+}
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgb(148 163 184 / 0.22), transparent 60%),
+    radial-gradient(900px 400px at -10% 10%, var(--tier-soft), transparent 60%),
+    var(--color-alabaster);
+  -webkit-font-smoothing: antialiased;
+}
+
+.glass {
+  background: rgb(255 255 255 / 0.62);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid rgb(226 232 240 / 0.95);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.9) inset,
+    0 10px 30px -18px rgb(15 23 42 / 0.25);
+  border-radius: 1rem;
+}
+
+.eyebrow {
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute);
+  font-weight: 600;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--tier);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

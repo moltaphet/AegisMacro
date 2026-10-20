@@ -1,0 +1,14 @@
+# Python toolchain for the AegisMacro contract suite.
+#
+#   uv venv --python 3.12
+#   uv pip install --prerelease=allow -r requirements-dev.txt
+#   .venv/bin/python -m pytest -q
+#
+# Python 3.12 is required by the v0.3 GenVM runner harness; genlayer-test is
+# pinned to the 0.30.0rc2 pre-release that understands the v0.3 calldata format.
+genlayer-test==0.30.0rc2
+genlayer-py==0.19.0rc2
+genvm-linter==0.11.1rc2
+pytest==9.1.1
+web3==8.0.0
+eth-account==0.14.0

@@ -1,0 +1,10 @@
+{
+  "schema": "aegismacro.feed.v1",
+  "feed": "GLOBAL_ECONOMIC_WIRE_MIRROR",
+  "epoch": 5,
+  "risk_level": 2,
+  "event_id": "MOCK-E05X",
+  "headline": "MOCK: epoch 5 bulletin",
+  "published_at": "2026-10-05T09:00:00Z",
+  "mock": true
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "aegismacro.feed.v1",
+  "feed": "GLOBAL_ECONOMIC_WIRE_MIRROR",
+  "epoch": 3,
+  "risk_level": 0,
+  "event_id": "MOCK-E03",
+  "headline": "MOCK: conditions normalise, scrutiny lifted",
+  "published_at": "2026-10-03T09:00:00Z",
+  "mock": true
+}

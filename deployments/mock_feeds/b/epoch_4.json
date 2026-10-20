@@ -1,0 +1,10 @@
+{
+  "schema": "aegismacro.feed.v1",
+  "feed": "CENTRAL_BANK_MACRO_MIRROR",
+  "epoch": 4,
+  "risk_level": 1,
+  "event_id": "MOCK-E04",
+  "headline": "MOCK: tightening guidance published, second wire delayed",
+  "published_at": "2026-10-04T09:00:00Z",
+  "mock": true
+}

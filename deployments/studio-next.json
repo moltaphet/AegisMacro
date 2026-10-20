@@ -1,0 +1,254 @@
+{
+  "network": "studio-next",
+  "chain_id": 61997,
+  "rpc_url": "https://studio-next.genlayer.com/api",
+  "contract_address": "0x2bECc4109c75cCe782e46D75D0959b998d53566D",
+  "explorer_url": "https://explorer-studio-next.genlayer.com/address/0x2bECc4109c75cCe782e46D75D0959b998d53566D",
+  "source": "contracts/aegis_macro.py",
+  "runner_header": "# v0.3.0\n# { \"Depends\": \"py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng\" }",
+  "source_sha256": "6c4f352fcaace58f666ef9cc64ca36d8921d47342061d8ee89d3de66ef1cd6cf",
+  "deployer": "0x6Bc75Ab4c6C2945C26D732CC26A6331A3A327feD",
+  "watchtower": "0xdA6db07b31527542bcb4C5D0098e1153df635cc7",
+  "feed_commit": "52889f37f5dee785a9c70f05ab630df47b1e0053",
+  "feed_bases": [
+    "https://raw.githubusercontent.com/SOBEK96/DeFiGuard/52889f37f5dee785a9c70f05ab630df47b1e0053/deployments/mock_feeds/a/",
+    "https://cdn.jsdelivr.net/gh/SOBEK96/DeFiGuard@52889f37f5dee785a9c70f05ab630df47b1e0053/deployments/mock_feeds/b/",
+    "https://raw.githack.com/SOBEK96/DeFiGuard/52889f37f5dee785a9c70f05ab630df47b1e0053/deployments/mock_feeds/c/"
+  ],
+  "feed_operators": [
+    "0x79526bb13ccc1688d201112b6a694c05a9d965c2",
+    "0x52494d6f473d0bff0022129a8b0e993dba209c12",
+    "0xe443d2572d9d72f4063e698b33cd56e5334cae31"
+  ],
+  "watchtower_bond_wei": "200000000000000000",
+  "transactions": {
+    "deploy": {
+      "hash": "0x960a35923b5e36eb08f25085fc1aa95326826a77faf260b5d2e3c81ccfd85c21",
+      "status": "FINALIZED",
+      "execution": "FINISHED_WITH_RETURN",
+      "resolution": "MAJORITY_AGREE"
+    },
+    "seed_liquidity": {
+      "hash": "0x4d40f190ab1802db8d8afb809410e7cd05fede865865adb3cbc981fd7a0fa6ce",
+      "status": "ACCEPTED",
+      "execution": "FINISHED_WITH_RETURN",
+      "resolution": "MAJORITY_AGREE",
+      "value_wei": "500000000000000000"
+    },
+    "report_risk": {
+      "hash": "0xee4ed54a0ea851ca5b924be4c4521f1f3d413a40c87ffea2e2c758eb30b8f3f1",
+      "status": "ACCEPTED",
+      "execution": "FINISHED_WITH_RETURN",
+      "resolution": "MAJORITY_AGREE",
+      "value_wei": "200000000000000000",
+      "epoch": "1",
+      "claimed_level": "1"
+    }
+  },
+  "readbacks": {
+    "get_protocol_state": {
+      "base_borrow_rate_bps": 750,
+      "borrow_index": "1000000129375951293",
+      "contract_balance_wei": "700000000000000000",
+      "governor": "0x6bc75ab4c6c2945c26d732cc26a6331a3a327fed",
+      "inconclusive_reports": 0,
+      "insurance_reserve_wei": "0",
+      "last_applied_epoch": 1,
+      "max_ltv_bps": 7000,
+      "pending_governor": "",
+      "pool_cash_wei": "500000000000000000",
+      "rejected_reports": 0,
+      "report_count": 1,
+      "reserve_factor_bps": 2000,
+      "reserve_pool_wei": "0",
+      "risk_level": 1,
+      "risk_name": "RISK_LEVEL_ELEVATED",
+      "shift_count": 1,
+      "solvent": true,
+      "total_borrows_wei": "0",
+      "total_claimable_wei": "200000000000000000",
+      "total_collateral_wei": "0",
+      "total_shares": "500000000000000000",
+      "tracked_wei": "700000000000000000",
+      "verified_reports": 1,
+      "watchtower_bond_wei": "200000000000000000"
+    },
+    "get_risk_status": {
+      "base_borrow_rate_bps": 750,
+      "last_applied_epoch": 1,
+      "max_ltv_bps": 7000,
+      "reserve_factor_bps": 2000,
+      "risk_level": 1,
+      "risk_name": "RISK_LEVEL_ELEVATED",
+      "shift_count": 1,
+      "updated_at": 1792483048
+    },
+    "get_feed_sources": [
+      {
+        "base_url": "https://raw.githubusercontent.com/SOBEK96/DeFiGuard/52889f37f5dee785a9c70f05ab630df47b1e0053/deployments/mock_feeds/a/",
+        "host": "raw.githubusercontent.com",
+        "label": "SEC_REGULATORY_MIRROR",
+        "operator": "0x79526bb13ccc1688d201112b6a694c05a9d965c2",
+        "pending_base_url": "",
+        "pending_operator": "",
+        "rotation_eta": 0,
+        "slot": 0
+      },
+      {
+        "base_url": "https://cdn.jsdelivr.net/gh/SOBEK96/DeFiGuard@52889f37f5dee785a9c70f05ab630df47b1e0053/deployments/mock_feeds/b/",
+        "host": "cdn.jsdelivr.net",
+        "label": "CENTRAL_BANK_MACRO_MIRROR",
+        "operator": "0x52494d6f473d0bff0022129a8b0e993dba209c12",
+        "pending_base_url": "",
+        "pending_operator": "",
+        "rotation_eta": 0,
+        "slot": 1
+      },
+      {
+        "base_url": "https://raw.githack.com/SOBEK96/DeFiGuard/52889f37f5dee785a9c70f05ab630df47b1e0053/deployments/mock_feeds/c/",
+        "host": "raw.githack.com",
+        "label": "GLOBAL_ECONOMIC_WIRE_MIRROR",
+        "operator": "0xe443d2572d9d72f4063e698b33cd56e5334cae31",
+        "pending_base_url": "",
+        "pending_operator": "",
+        "rotation_eta": 0,
+        "slot": 2
+      }
+    ],
+    "get_risk_tiers": [
+      {
+        "base_borrow_rate_bps": 400,
+        "max_ltv_bps": 8000,
+        "reserve_factor_bps": 1000,
+        "risk_level": 0,
+        "risk_name": "RISK_LEVEL_NORMAL"
+      },
+      {
+        "base_borrow_rate_bps": 750,
+        "max_ltv_bps": 7000,
+        "reserve_factor_bps": 2000,
+        "risk_level": 1,
+        "risk_name": "RISK_LEVEL_ELEVATED"
+      },
+      {
+        "base_borrow_rate_bps": 1200,
+        "max_ltv_bps": 5000,
+        "reserve_factor_bps": 4000,
+        "risk_level": 2,
+        "risk_name": "RISK_LEVEL_CRITICAL"
+      }
+    ],
+    "get_report_count": 1,
+    "get_report_1": {
+      "announcement_hash": "66e48356b26f1724f446763d3eb2e8aa9204f54caa9696ca3c7f46bf7ceb66e9",
+      "bond_wei": "200000000000000000",
+      "bounty_wei": "0",
+      "claimed_level": 1,
+      "created_at": 1792483048,
+      "epoch": 1,
+      "level_changed": true,
+      "quorum_level": 1,
+      "quorum_present": true,
+      "report_id": 1,
+      "slashed_wei": "0",
+      "source_count": 3,
+      "verdict": 1,
+      "verdict_name": "VERIFIED_RISK_SHIFT",
+      "watchtower": "0xda6db07b31527542bcb4c5d0098e1153df635cc7"
+    },
+    "get_watchtower": {
+      "address": "0xda6db07b31527542bcb4c5d0098e1153df635cc7",
+      "claimable_wei": "200000000000000000",
+      "inconclusive": 0,
+      "rejected": 0,
+      "verified": 1
+    },
+    "get_position_deployer": {
+      "address": "0x6bc75ab4c6c2945c26d732cc26a6331a3a327fed",
+      "borrowable_wei": "0",
+      "collateral_wei": "0",
+      "current_ltv_bps": 0,
+      "debt_wei": "0",
+      "interest_wei": "0",
+      "lp_shares": "500000000000000000",
+      "lp_value_wei": "500000000000000000",
+      "max_ltv_bps": 7000,
+      "over_limit": false,
+      "principal_wei": "0"
+    }
+  },
+  "recorded_at": "2026-10-20T07:57:43.301Z",
+  "extra_transactions": [
+    {
+      "label": "report_risk epoch 6 claim 2",
+      "hash": "0x6051d96a1aee282bff953bd96a7177b3181f0162e8c2be74514b07e9cb9faa3b",
+      "status": "ACCEPTED",
+      "execution": "FINISHED_WITH_RETURN",
+      "resolution": "MAJORITY_AGREE",
+      "value_wei": "200000000000000000",
+      "report": {
+        "announcement_hash": "",
+        "bond_wei": "200000000000000000",
+        "bounty_wei": "0",
+        "claimed_level": 2,
+        "created_at": 1792483107,
+        "epoch": 6,
+        "level_changed": false,
+        "quorum_level": 0,
+        "quorum_present": false,
+        "report_id": 2,
+        "slashed_wei": "0",
+        "source_count": 3,
+        "verdict": 2,
+        "verdict_name": "QUORUM_FAILURE",
+        "watchtower": "0xda6db07b31527542bcb4c5d0098e1153df635cc7"
+      },
+      "watchtower_after": {
+        "address": "0xda6db07b31527542bcb4c5d0098e1153df635cc7",
+        "claimable_wei": "400000000000000000",
+        "inconclusive": 1,
+        "rejected": 0,
+        "verified": 1
+      }
+    }
+  ],
+  "readbacks_latest": {
+    "get_protocol_state": {
+      "base_borrow_rate_bps": 750,
+      "borrow_index": "1000000129375951293",
+      "contract_balance_wei": "900000000000000000",
+      "governor": "0x6bc75ab4c6c2945c26d732cc26a6331a3a327fed",
+      "inconclusive_reports": 1,
+      "insurance_reserve_wei": "0",
+      "last_applied_epoch": 1,
+      "max_ltv_bps": 7000,
+      "pending_governor": "",
+      "pool_cash_wei": "500000000000000000",
+      "rejected_reports": 0,
+      "report_count": 2,
+      "reserve_factor_bps": 2000,
+      "reserve_pool_wei": "0",
+      "risk_level": 1,
+      "risk_name": "RISK_LEVEL_ELEVATED",
+      "shift_count": 1,
+      "solvent": true,
+      "total_borrows_wei": "0",
+      "total_claimable_wei": "400000000000000000",
+      "total_collateral_wei": "0",
+      "total_shares": "500000000000000000",
+      "tracked_wei": "900000000000000000",
+      "verified_reports": 1,
+      "watchtower_bond_wei": "200000000000000000"
+    },
+    "get_risk_status": {
+      "base_borrow_rate_bps": 750,
+      "last_applied_epoch": 1,
+      "max_ltv_bps": 7000,
+      "reserve_factor_bps": 2000,
+      "risk_level": 1,
+      "risk_name": "RISK_LEVEL_ELEVATED",
+      "shift_count": 1,
+      "updated_at": 1792483048
+    }
+  }
+}
