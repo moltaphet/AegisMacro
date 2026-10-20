@@ -1682,6 +1682,21 @@ def test_debt_ledgers_sum_to_total_borrows_after_sync(world, seed):
     world.assert_conserved()
 
 
+@pytest.mark.parametrize("seed", [100, 101, 102, 103])
+def test_unrealised_interest_aggregate_matches_per_borrower_sum(world, seed):
+    """norm_borrows is maintained incrementally. Once every borrower is synced there
+    is no unrealised interest left, so the LP (sole shareholder) is worth exactly
+    idle cash + realised loans, to within a wei of rounding per borrower."""
+    users = run_random_session(world, seed, steps=50)
+    for u in users:  # a 1-wei deposit realises each borrower's interest
+        world.deposit(u, 1)
+    s = world.state()
+    assert shares_of(world, world.lp) == int(s["total_shares"])
+    value = int(world.position(world.lp)["lp_value_wei"])
+    assets = int(s["pool_cash_wei"]) + int(s["total_borrows_wei"])
+    assert 0 <= value - assets <= len(users)
+
+
 @pytest.mark.parametrize("seed", [200, 201, 202])
 def test_everyone_can_exit_without_stranding_funds(world, seed):
     users = run_random_session(world, seed, steps=45)
@@ -1703,6 +1718,124 @@ def test_everyone_can_exit_without_stranding_funds(world, seed):
         if sh:
             world.tx(lp, "withdraw_liquidity", sh)
     world.assert_conserved()
+
+
+# ===========================================================================
+# 9b. Audit regressions: LP share pricing vs. unrealised interest, and
+#     governor / feed-operator separation across concurrent proposals
+# ===========================================================================
+
+
+def borrow_a_year(world):
+    """10 GEN of LP cash, 8 GEN borrowed, then one year at the 4% NORMAL rate
+    with NO borrower touching the pool: 0.32 GEN of interest accrued, none of
+    it yet realised into total_borrows."""
+    world.deposit(world.alice, 10 * ATTO)
+    world.tx(world.alice, "borrow", 8 * ATTO)
+    world.advance(YEAR)
+    accrued = 8 * ATTO * 400 // 10000
+    assert int(world.state()["total_borrows_wei"]) == 8 * ATTO  # stale: the bug's precondition
+    return accrued
+
+
+def test_new_lp_is_priced_with_interest_accrued_before_entry(funded):
+    accrued = borrow_a_year(funded)
+    funded.tx(funded.bob, "seed_liquidity", value=10 * ATTO)
+    # fair price: (idle 2 + borrowed 8 + accrued 0.32) GEN backing 10 GEN of shares
+    assert shares_of(funded, funded.bob) == (10 * ATTO * 10 * ATTO) // (10 * ATTO + accrued)
+    funded.assert_conserved()
+
+
+def test_new_lp_cannot_claim_interest_accrued_before_entry(funded):
+    borrow_a_year(funded)
+    funded.tx(funded.bob, "seed_liquidity", value=10 * ATTO)
+    owed = int(funded.position(funded.alice)["debt_wei"])
+    funded.tx(funded.alice, "repay", value=owed)
+    bob_out = int(funded.tx(funded.bob, "withdraw_liquidity", shares_of(funded, funded.bob)))
+    # bob paid in 10 GEN after the interest had already accrued; he must not
+    # walk out with more than that (the stale price let him take ~0.16 GEN extra)
+    assert bob_out <= 10 * ATTO
+    funded.assert_conserved()
+
+
+def test_withdrawing_lp_is_paid_interest_accrued_before_exit(funded):
+    accrued = borrow_a_year(funded)
+    # 1 of 10 shares, with 10.32 GEN of assets behind them
+    out = funded.tx(funded.lp, "withdraw_liquidity", ATTO)
+    assert int(out) == ATTO * (10 * ATTO + accrued) // (10 * ATTO)
+    funded.assert_conserved()
+
+
+def test_lp_share_value_view_includes_accrued_interest(funded):
+    accrued = borrow_a_year(funded)
+    assert int(funded.position(funded.lp)["lp_value_wei"]) == 10 * ATTO + accrued
+
+
+def test_share_price_is_continuous_across_a_borrower_sync(funded):
+    accrued = borrow_a_year(funded)
+    before = int(funded.position(funded.lp)["lp_value_wei"])
+    funded.deposit(funded.alice, 1)  # realises alice's interest into total_borrows
+    assert int(funded.state()["total_borrows_wei"]) == 8 * ATTO + accrued
+    after = int(funded.position(funded.lp)["lp_value_wei"])
+    assert abs(after - before) <= 1
+
+
+def test_share_pricing_without_borrows_is_unchanged(funded):
+    funded.advance(YEAR)
+    assert int(funded.position(funded.lp)["lp_value_wei"]) == 10 * ATTO
+    funded.tx(funded.bob, "seed_liquidity", value=5 * ATTO)
+    assert shares_of(funded, funded.bob) == 5 * ATTO
+
+
+def test_pending_governor_cannot_be_proposed_as_feed_operator(world):
+    world.tx(world.gov, "propose_governor", hex_of(world.alice))
+    world.revert_msg(world.gov, "propose_feed_rotation", 0, NEW_BASE_A, hex_of(world.alice),
+                     message="pending governor cannot operate a feed")
+    assert world.state()["pending_governor"] == hex_of(world.alice)
+
+
+def test_pending_feed_operator_cannot_be_proposed_as_governor(world):
+    propose(world, slot=0, op=hex_of(world.alice))
+    world.revert_msg(world.gov, "propose_governor", hex_of(world.alice),
+                     message="a pending feed operator cannot be governor")
+    assert world.state()["pending_governor"] == ""
+
+
+def test_concurrent_role_proposals_for_one_address_cannot_both_land(world):
+    """The audit's scenario: queue a governor handover and a feed rotation for
+    the same address and let both execute. Whichever is queued second is refused,
+    so no ordering ends with one address holding both roles."""
+    world.tx(world.gov, "propose_governor", hex_of(world.alice))
+    with world.vm.expect_revert("ERR_INVALID_FEED_SOURCE"):
+        propose(world, slot=1, op=hex_of(world.alice))
+    world.tx(world.alice, "accept_governor")
+    sources = world.view("get_feed_sources")
+    assert hex_of(world.alice) not in [f["operator"] for f in sources]
+    assert world.state()["governor"].lower() == hex_of(world.alice)
+
+
+def test_cancelled_rotation_frees_the_address_for_governor(world):
+    propose(world, slot=0, op=hex_of(world.alice))
+    world.tx(world.gov, "cancel_feed_rotation", 0)
+    world.tx(world.gov, "propose_governor", hex_of(world.alice))
+    world.tx(world.alice, "accept_governor")
+    assert world.state()["governor"].lower() == hex_of(world.alice)
+
+
+def test_executed_rotation_operator_cannot_be_governor(world):
+    op = new_op("rot_then_gov")
+    propose(world, slot=0, op=op)
+    world.advance(7 * DAY)
+    world.tx(world.gov, "execute_feed_rotation", 0)
+    world.revert_msg(world.gov, "propose_governor", op, message="a feed operator cannot be governor")
+
+
+def test_repointing_pending_governor_rechecks_pending_operators(world):
+    world.tx(world.gov, "propose_governor", hex_of(world.alice))
+    propose(world, slot=0, op=hex_of(world.bob))
+    world.revert_msg(world.gov, "propose_governor", hex_of(world.bob),
+                     message="a pending feed operator cannot be governor")
+    assert world.state()["pending_governor"] == hex_of(world.alice)
 
 
 # ===========================================================================

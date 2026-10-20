@@ -376,6 +376,9 @@ class AegisMacro(gl.contract.Contract):
     pool_cash: u256  # lendable liquidity
     total_collateral: u256
     total_borrows: u256
+    # sum over borrowers of debt * INDEX_ONE // debt_index: every outstanding loan
+    # restated at index 1.0, so pool-wide unrealised interest is O(1) (_pending_interest)
+    norm_borrows: u256
     total_shares: u256
     # lending positions
     lp_shares: TreeMap[str, u256]
@@ -435,6 +438,7 @@ class AegisMacro(gl.contract.Contract):
         self.pool_cash = 0
         self.total_collateral = 0
         self.total_borrows = 0
+        self.norm_borrows = 0
         self.total_shares = 0
         self.borrow_index = INDEX_ONE
         self.index_updated_at = self._now()
@@ -768,6 +772,8 @@ class AegisMacro(gl.contract.Contract):
             _fail(ERR_PARAM, "operator is not a 0x address")
         if op == self.governor.as_hex.lower():
             _fail(ERR_FEED, "governor cannot operate a feed")
+        if op == self.pending_governor:
+            _fail(ERR_FEED, "pending governor cannot operate a feed")
         self._check_unique_operators(s, op)
         eta = self._now() + ROTATION_DELAY
         self.rot_base[s] = new_base_url
@@ -790,6 +796,10 @@ class AegisMacro(gl.contract.Contract):
         if now > eta + ROTATION_EXPIRY:
             _fail(ERR_TIMELOCK, "rotation proposal expired; propose again")
         op = self.rot_operator[s]
+        # separation of duties is enforced here too, against whoever holds (or is
+        # about to hold) the governor role NOW, not just whoever did at proposal time
+        if op == self.governor.as_hex.lower() or op == self.pending_governor:
+            _fail(ERR_FEED, "governor cannot operate a feed")
         self._check_unique_operators(s, op)
         ops = [self.feed_operator[0], self.feed_operator[1], self.feed_operator[2]]
         ops[s] = op
@@ -820,9 +830,7 @@ class AegisMacro(gl.contract.Contract):
         g = _norm_address(new_governor_hex)
         if g == "":
             _fail(ERR_PARAM, "address must be 0x + 40 hex")
-        for slot in range(SLOT_COUNT):
-            if self.feed_operator[slot] == g:
-                _fail(ERR_FEED, "a feed operator cannot be governor")
+        self._check_not_feed_role(g)
         self.pending_governor = g
 
     @gl.public.write
@@ -832,6 +840,8 @@ class AegisMacro(gl.contract.Contract):
             _fail(ERR_STATE, "no governor handover pending")
         if gl.message.sender_address.as_hex.lower() != pending:
             _fail(ERR_UNAUTHORIZED, "only the proposed governor may accept")
+        # re-checked at the moment of handover: a feed role may have been queued since
+        self._check_not_feed_role(pending)
         self.governor = gl.message.sender_address
         self.pending_governor = ""
 
@@ -841,7 +851,9 @@ class AegisMacro(gl.contract.Contract):
         amount = int(gl.message.value)
         if amount == 0:
             _fail(ERR_PARAM, "send value to supply")
-        total_assets = int(self.pool_cash) + int(self.total_borrows)
+        now = self._now()
+        self._accrue_global(now)  # price the share against interest accrued up to this instant
+        total_assets = self._total_assets(now)
         shares_total = int(self.total_shares)
         if shares_total == 0:
             minted = amount
@@ -864,6 +876,7 @@ class AegisMacro(gl.contract.Contract):
         have = self._get(self.lp_shares, key)
         if sh == 0 or sh > have:
             _fail(ERR_PARAM, "invalid share amount")
+        self._accrue_global(self._now())  # burn at a price that includes interest accrued so far
         assets = self._shares_value(sh)
         if assets == 0:
             _fail(ERR_PARAM, "shares are worth nothing")
@@ -900,7 +913,7 @@ class AegisMacro(gl.contract.Contract):
         # exact integer test: new_debt / collateral <= max_ltv / 10000
         if new_debt * BPS > self._get(self.collateral, key) * max_ltv:
             _fail(ERR_LTV, f"borrow would exceed the active {max_ltv} bps max LTV")
-        self.debt[key] = new_debt
+        self._set_debt(key, new_debt, int(self.borrow_index))
         self.principal[key] = self._get(self.principal, key) + amt
         self.total_borrows = int(self.total_borrows) + amt
         self.pool_cash = int(self.pool_cash) - amt
@@ -924,7 +937,7 @@ class AegisMacro(gl.contract.Contract):
         principal_part = pay - interest_part
         rf = RISK_TIERS[int(self.risk_level)][2]
         reserve_cut = (interest_part * rf) // BPS
-        self.debt[key] = owed - pay
+        self._set_debt(key, owed - pay, int(self.borrow_index))
         self.principal[key] = princ - principal_part
         self.total_borrows = int(self.total_borrows) - pay
         self.reserve_pool = int(self.reserve_pool) + reserve_cut
@@ -988,16 +1001,51 @@ class AegisMacro(gl.contract.Contract):
             + int(self.total_claimable)
         )
 
+    def _check_not_feed_role(self, addr: str) -> None:
+        """addr may not be governor if it operates a feed or has a rotation queued to."""
+        for slot in range(SLOT_COUNT):
+            if self.feed_operator[slot] == addr:
+                _fail(ERR_FEED, "a feed operator cannot be governor")
+            if int(self.rot_eta[slot]) != 0 and self.rot_operator[slot] == addr:
+                _fail(ERR_FEED, "a pending feed operator cannot be governor")
+
     def _check_unique_operators(self, slot: int, op: str) -> None:
         for other in range(SLOT_COUNT):
             if other != slot and self.feed_operator[other] == op:
                 _fail(ERR_FEED, "operator already runs another feed")
 
+    def _norm_of(self, key: str) -> int:
+        d = self._get(self.debt, key)
+        snap = self._get(self.debt_index, key)
+        if d == 0 or snap == 0:
+            return 0
+        return (d * INDEX_ONE) // snap
+
+    def _set_debt(self, key: str, new_debt: int, snap: int) -> None:
+        """The only writer of debt / debt_index: keeps norm_borrows equal to the
+        sum of every borrower's _norm_of, by removing the old term and adding the new."""
+        self.norm_borrows = int(self.norm_borrows) - self._norm_of(key)
+        self.debt[key] = new_debt
+        self.debt_index[key] = snap
+        self.norm_borrows = int(self.norm_borrows) + self._norm_of(key)
+
+    def _pending_interest(self, now: int) -> int:
+        """Interest accrued on open loans but not yet realised into total_borrows
+        (a borrower's debt is only brought current when that borrower acts).
+        Rounds down, so the pool never books interest it has not earned."""
+        accrued = (int(self.norm_borrows) * self._index_at(now)) // INDEX_ONE
+        booked = int(self.total_borrows)
+        return accrued - booked if accrued > booked else 0
+
+    def _total_assets(self, now: int) -> int:
+        """Everything the LP shares claim: idle cash, loans, and accrued interest on them."""
+        return int(self.pool_cash) + int(self.total_borrows) + self._pending_interest(now)
+
     def _shares_value(self, shares: int) -> int:
         total = int(self.total_shares)
         if total == 0:
             return 0
-        return (shares * (int(self.pool_cash) + int(self.total_borrows))) // total
+        return (shares * self._total_assets(self._now())) // total
 
     def _index_at(self, now: int) -> int:
         idx = int(self.borrow_index)
@@ -1031,6 +1079,5 @@ class AegisMacro(gl.contract.Contract):
         old = self._get(self.debt, key)
         new = self._debt_at(key, index)
         if new != old:
-            self.debt[key] = new
             self.total_borrows = int(self.total_borrows) + (new - old)
-        self.debt_index[key] = index
+        self._set_debt(key, new, index)
