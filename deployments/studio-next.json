@@ -2,18 +2,18 @@
   "network": "studio-next",
   "chain_id": 61997,
   "rpc_url": "https://studio-next.genlayer.com/api",
-  "contract_address": "0xc8342FAFA7C492046244D27EFdd678ce429072A7",
-  "explorer_url": "https://explorer-studio-next.genlayer.com/address/0xc8342FAFA7C492046244D27EFdd678ce429072A7",
+  "contract_address": "0xff83265038794d882ee3c532Ad155aF8584F3f91",
+  "explorer_url": "https://explorer-studio-next.genlayer.com/address/0xff83265038794d882ee3c532Ad155aF8584F3f91",
   "source": "contracts/aegis_macro.py",
   "runner_header": "# v0.3.0\n# { \"Depends\": \"py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng\" }",
-  "source_sha256": "46bc19d88dd9d5b824585ed5a515d5edfe4f5b6b98c57e894f190d5735899711",
+  "source_sha256": "b8efc2aed80a2110543f90587d3f0dc69180af895fbc11c31f9fb23c25f0a6dc",
   "deployer": "0x6Bc75Ab4c6C2945C26D732CC26A6331A3A327feD",
   "watchtower": "0xdA6db07b31527542bcb4C5D0098e1153df635cc7",
-  "feed_commit": "efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752",
+  "feed_commit": "6448619c0e043c278640656a901b82220fb93908",
   "feed_bases": [
-    "https://raw.githubusercontent.com/moltaphet/AegisMacro/efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/a/",
-    "https://cdn.jsdelivr.net/gh/moltaphet/AegisMacro@efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/b/",
-    "https://raw.githack.com/moltaphet/AegisMacro/efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/c/"
+    "https://raw.githubusercontent.com/moltaphet/AegisMacro/6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/a/",
+    "https://cdn.jsdelivr.net/gh/moltaphet/AegisMacro@6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/b/",
+    "https://raw.githack.com/moltaphet/AegisMacro/6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/c/"
   ],
   "feed_operators": [
     "0x79526bb13ccc1688d201112b6a694c05a9d965c2",
@@ -23,20 +23,20 @@
   "watchtower_bond_wei": "200000000000000000",
   "transactions": {
     "deploy": {
-      "hash": "0x2a0303bd6855a7c35219946528cd19bf2497781974c1a29d79523a1c921873ec",
+      "hash": "0x24955c0d220fc85e897f2013b172c0dae32ef863739b94ba0116a54f73512e8f",
       "status": "ACCEPTED",
       "execution": "FINISHED_WITH_RETURN",
       "resolution": "MAJORITY_AGREE"
     },
     "seed_liquidity": {
-      "hash": "0x2a3d4b98cdfa70ffa283594c637d7fd45d341ad2fc642211710fabe468b0de5b",
+      "hash": "0xe53da36c51ff23e915f52777173294cf715259342bdecbb4a76af91fb095cecd",
       "status": "ACCEPTED",
       "execution": "FINISHED_WITH_RETURN",
       "resolution": "MAJORITY_AGREE",
       "value_wei": "500000000000000000"
     },
     "report_risk": {
-      "hash": "0x77bab82592d1524fc6f611c4a48e78bfe11630768e8ed41e546d549475708552",
+      "hash": "0x28122e0815f534fe0825052fe952a8c5e2bf5fb5e806c403fee6ee699c632d8c",
       "status": "ACCEPTED",
       "execution": "FINISHED_WITH_RETURN",
       "resolution": "MAJORITY_AGREE",
@@ -48,7 +48,7 @@
   "readbacks": {
     "get_protocol_state": {
       "base_borrow_rate_bps": 750,
-      "borrow_index": "1000000034246575631",
+      "borrow_index": "1000000046930492676",
       "contract_balance_wei": "700000000000000000",
       "governor": "0x6bc75ab4c6c2945c26d732cc26a6331a3a327fed",
       "inconclusive_reports": 0,
@@ -81,11 +81,11 @@
       "risk_level": 1,
       "risk_name": "RISK_LEVEL_ELEVATED",
       "shift_count": 1,
-      "updated_at": 1792490925
+      "updated_at": 1792568476
     },
     "get_feed_sources": [
       {
-        "base_url": "https://raw.githubusercontent.com/moltaphet/AegisMacro/efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/a/",
+        "base_url": "https://raw.githubusercontent.com/moltaphet/AegisMacro/6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/a/",
         "host": "raw.githubusercontent.com",
         "label": "SEC_REGULATORY_MIRROR",
         "operator": "0x79526bb13ccc1688d201112b6a694c05a9d965c2",
@@ -95,7 +95,7 @@
         "slot": 0
       },
       {
-        "base_url": "https://cdn.jsdelivr.net/gh/moltaphet/AegisMacro@efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/b/",
+        "base_url": "https://cdn.jsdelivr.net/gh/moltaphet/AegisMacro@6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/b/",
         "host": "cdn.jsdelivr.net",
         "label": "CENTRAL_BANK_MACRO_MIRROR",
         "operator": "0x52494d6f473d0bff0022129a8b0e993dba209c12",
@@ -105,7 +105,7 @@
         "slot": 1
       },
       {
-        "base_url": "https://raw.githack.com/moltaphet/AegisMacro/efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/c/",
+        "base_url": "https://raw.githack.com/moltaphet/AegisMacro/6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/c/",
         "host": "raw.githack.com",
         "label": "GLOBAL_ECONOMIC_WIRE_MIRROR",
         "operator": "0xe443d2572d9d72f4063e698b33cd56e5334cae31",
@@ -144,7 +144,7 @@
       "bond_wei": "200000000000000000",
       "bounty_wei": "0",
       "claimed_level": 1,
-      "created_at": 1792490925,
+      "created_at": 1792568476,
       "epoch": 1,
       "level_changed": true,
       "quorum_level": 1,
@@ -177,5 +177,5 @@
       "principal_wei": "0"
     }
   },
-  "recorded_at": "2026-10-20T10:08:58.933Z"
+  "recorded_at": "2026-10-21T07:41:33.965Z"
 }

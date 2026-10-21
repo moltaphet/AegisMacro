@@ -18,18 +18,18 @@ Max LTV, borrow rate and reserve factor in integer basis points.
 | | |
 |---|---|
 | Network | GenLayer Studio Next · chain `61997` · `https://studio-next.genlayer.com/api` |
-| Contract | [`0xc8342FAFA7C492046244D27EFdd678ce429072A7`](https://explorer-studio-next.genlayer.com/address/0xc8342FAFA7C492046244D27EFdd678ce429072A7) |
-| Source SHA-256 | `46bc19d88dd9d5b824585ed5a515d5edfe4f5b6b98c57e894f190d5735899711` |
+| Contract | [`0xff83265038794d882ee3c532Ad155aF8584F3f91`](https://explorer-studio-next.genlayer.com/address/0xff83265038794d882ee3c532Ad155aF8584F3f91) |
+| Source SHA-256 | `b8efc2aed80a2110543f90587d3f0dc69180af895fbc11c31f9fb23c25f0a6dc` |
 | Runner header | `v0.3.0 # { "Depends": "py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng" }` |
 | Deployer (fresh) | `0x6Bc75Ab4c6C2945C26D732CC26A6331A3A327feD` |
 | Watchtower (fresh) | `0xdA6db07b31527542bcb4C5D0098e1153df635cc7` |
-| Feed commit | `efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752` |
+| Feed commit | `6448619c0e043c278640656a901b82220fb93908` |
 
 | Transaction | Hash | Status | Execution | Resolution |
 |---|---|---|---|---|
-| deploy | [`0x2a0303bd6855a7c35219946528cd19bf2497781974c1a29d79523a1c921873ec`](https://explorer-studio-next.genlayer.com/tx/0x2a0303bd6855a7c35219946528cd19bf2497781974c1a29d79523a1c921873ec) | ACCEPTED | FINISHED_WITH_RETURN | MAJORITY_AGREE |
-| seed_liquidity (0.5 GEN) | [`0x2a3d4b98cdfa70ffa283594c637d7fd45d341ad2fc642211710fabe468b0de5b`](https://explorer-studio-next.genlayer.com/tx/0x2a3d4b98cdfa70ffa283594c637d7fd45d341ad2fc642211710fabe468b0de5b) | ACCEPTED | FINISHED_WITH_RETURN | MAJORITY_AGREE |
-| report_risk (epoch 1, tier 1) | [`0x77bab82592d1524fc6f611c4a48e78bfe11630768e8ed41e546d549475708552`](https://explorer-studio-next.genlayer.com/tx/0x77bab82592d1524fc6f611c4a48e78bfe11630768e8ed41e546d549475708552) | ACCEPTED | FINISHED_WITH_RETURN | MAJORITY_AGREE |
+| deploy | [`0x24955c0d220fc85e897f2013b172c0dae32ef863739b94ba0116a54f73512e8f`](https://explorer-studio-next.genlayer.com/tx/0x24955c0d220fc85e897f2013b172c0dae32ef863739b94ba0116a54f73512e8f) | ACCEPTED | FINISHED_WITH_RETURN | MAJORITY_AGREE |
+| seed_liquidity (0.5 GEN) | [`0xe53da36c51ff23e915f52777173294cf715259342bdecbb4a76af91fb095cecd`](https://explorer-studio-next.genlayer.com/tx/0xe53da36c51ff23e915f52777173294cf715259342bdecbb4a76af91fb095cecd) | ACCEPTED | FINISHED_WITH_RETURN | MAJORITY_AGREE |
+| report_risk (epoch 1, tier 1) | [`0x28122e0815f534fe0825052fe952a8c5e2bf5fb5e806c403fee6ee699c632d8c`](https://explorer-studio-next.genlayer.com/tx/0x28122e0815f534fe0825052fe952a8c5e2bf5fb5e806c403fee6ee699c632d8c) | ACCEPTED | FINISHED_WITH_RETURN | MAJORITY_AGREE |
 
 Authoritative `gen_call` readbacks recorded after the transactions above (full JSON in `deployments/studio-next.json`):
 
@@ -40,11 +40,11 @@ get_protocol_state   -> pool_cash 0.5 GEN · claimable 0.2 GEN · insurance 0 GE
                         contract_balance 0.7 GEN · tracked 0.7 GEN · solvent true
                         reports 1 (verified 1, rejected 0, inconclusive 0)
 get_feed_sources[0] -> SEC_REGULATORY_MIRROR       raw.githubusercontent.com  operator 0x79526bb13ccc1688d201112b6a694c05a9d965c2
-                        https://raw.githubusercontent.com/moltaphet/AegisMacro/efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/a/
+                        https://raw.githubusercontent.com/moltaphet/AegisMacro/6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/a/
 get_feed_sources[1] -> CENTRAL_BANK_MACRO_MIRROR   cdn.jsdelivr.net           operator 0x52494d6f473d0bff0022129a8b0e993dba209c12
-                        https://cdn.jsdelivr.net/gh/moltaphet/AegisMacro@efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/b/
+                        https://cdn.jsdelivr.net/gh/moltaphet/AegisMacro@6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/b/
 get_feed_sources[2] -> GLOBAL_ECONOMIC_WIRE_MIRROR raw.githack.com            operator 0xe443d2572d9d72f4063e698b33cd56e5334cae31
-                        https://raw.githack.com/moltaphet/AegisMacro/efe61973ac8ce22ddc0c92bf3d5ebc4d2f298752/deployments/mock_feeds/c/
+                        https://raw.githack.com/moltaphet/AegisMacro/6448619c0e043c278640656a901b82220fb93908/deployments/mock_feeds/c/
 ```
 <!-- LIVE-DEPLOYMENT-END -->
 
