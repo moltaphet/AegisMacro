@@ -206,6 +206,16 @@ class World:
         assert out["verdict"] == VERIFIED
         return out
 
+    def at_epoch(self, applied: int):
+        """Start from a world where epochs 1..applied have already been verified.
+
+        report_risk accepts only applied + 1, so tests of a later fixture epoch
+        cannot reach it through the public API when an earlier epoch is
+        deliberately unresolvable (fixture epoch 6). Direct mode lets a test set
+        the counter itself; the contract's own sequencing logic is unchanged."""
+        self.c.risk_epoch = applied
+        return self
+
     # -- accounting --------------------------------------------------------
     def state(self) -> dict:
         return self.view("get_protocol_state")

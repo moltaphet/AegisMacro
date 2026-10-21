@@ -308,7 +308,8 @@ def obs_of(kind: str, claim: int) -> dict:
 
 def oracle(kinds, claim):
     """Independent restatement of the spec: slash only on a 2-source
-    contradiction or a 2-source 404; verify on a 2-source match."""
+    contradiction or a 2-source 404 where NO source confirms the record (1 confirmed
+    + 404s is CDN lag, never a slash); verify on a 2-source match."""
     other = (claim + 1) % 3
     keys = {"claim": (claim, "E"), "other": (other, "E"), "alt": (claim, "F")}
     tally = {}
@@ -319,7 +320,7 @@ def oracle(kinds, claim):
     for key, n in tally.items():
         if n >= 2:
             return (VERIFIED if key[0] == claim else REJECTED), key[0]
-    if nf >= 2:
+    if nf >= 2 and not tally:
         return REJECTED, -1
     return QUORUM_FAILURE, -1
 
@@ -386,6 +387,52 @@ def test_spec_two_404_is_rejected_as_fabricated(world):
 
 def test_spec_three_404_is_rejected(world):
     assert agg(world, [NF, NF, NF])["verdict"] == REJECTED
+
+
+def test_one_confirmed_plus_two_404_lags_returns_quorum_failure_without_slashing(world):
+    """One mirror already serves the record, the other two still 404 (CDN lag).
+    The honest Watchtower must keep its bond and be free to retry the epoch."""
+    world.feeds.serve(1, ("ok", ELEVATED), "404", "404")
+    out = world.report(1, ELEVATED)
+    assert out["verdict"] == QUORUM_FAILURE and out["verdict_name"] == "QUORUM_FAILURE"
+    assert out["bond_intact"] is True and out["slashed_wei"] == "0"
+    assert out["risk_level"] == -1 and out["announcement_hash"] == ""
+    assert out["source_count"] == 3  # all three answered; none of them agreed
+    assert world.state()["insurance_reserve_wei"] == "0"
+    assert claim_balance(world, world.watch) == BOND
+    assert world.view("get_watchtower", hex_of(world.watch))["rejected"] == 0
+    assert world.view("get_risk_status")["last_applied_epoch"] == 0  # epoch not consumed
+    world.assert_conserved()
+    # the lag clears and the very same Watchtower retries successfully
+    world.vm.clear_mocks()
+    world.feeds.all_agree(1, ELEVATED)
+    assert world.report(1, ELEVATED)["verdict"] == VERIFIED
+    assert claim_balance(world, world.watch) == 2 * BOND
+
+
+@pytest.mark.parametrize("perm", [(OK1, NF, NF), (NF, OK1, NF), (NF, NF, OK1)], ids=["ok-nf-nf", "nf-ok-nf", "nf-nf-ok"])
+def test_one_confirmed_plus_two_404s_is_lag_in_every_position(world, perm):
+    out = agg(world, list(perm))
+    assert out["verdict"] == QUORUM_FAILURE and out["risk_level"] == -1 and out["announcement_hash"] == ""
+
+
+@pytest.mark.parametrize("confirmed_level", [NORMAL, ELEVATED, CRITICAL])
+def test_one_confirmed_plus_two_404s_is_lag_whatever_it_confirms(world, confirmed_level):
+    one = {"status": "OK", "risk_level": confirmed_level, "event_id": "E"}
+    assert agg(world, [one, NF, NF])["verdict"] == QUORUM_FAILURE
+
+
+def test_one_confirmed_plus_404_plus_outage_still_never_slashes(world):
+    for perm in itertools.permutations([OK1, NF, DOWN]):
+        assert agg(world, list(perm))["verdict"] == QUORUM_FAILURE
+
+
+def test_slash_paths_that_remain_are_unchanged(world):
+    normal = {"status": "OK", "risk_level": 0, "event_id": "X"}
+    assert agg(world, [normal, normal, NF], claim=CRITICAL)["verdict"] == REJECTED  # (a) 2 sources contradict
+    assert agg(world, [NF, NF, DOWN])["verdict"] == REJECTED  # nothing confirmed anywhere
+    assert agg(world, [NF, NF, NF])["verdict"] == REJECTED
+    assert agg(world, [OK1, OK1, NF])["verdict"] == VERIFIED  # a real quorum still wins over a 404
 
 
 def test_spec_two_normal_sources_contradict_emergency_claim(world):
@@ -572,33 +619,72 @@ def test_claimed_level_out_of_range_reverts(world):
     world.revert_msg(world.watch, "report_risk", 1, 3, value=BOND, message="claimed_level")
 
 
-@pytest.mark.parametrize("epoch", [0, 17, 18, 1000, 10**9])
-def test_epoch_outside_window_reverts(world, epoch):
-    world.revert_msg(world.watch, "report_risk", epoch, ELEVATED, value=BOND, message="ERR_EPOCH_OUT_OF_RANGE")
-
-
-@pytest.mark.parametrize("epoch", [1, 2, 8, 16])
-def test_epoch_inside_window_accepted(world, epoch):
+@pytest.mark.parametrize("epoch", [0, 2, 3, 8, 16, 17, 1000, 10**9])
+def test_only_epoch_one_may_bootstrap(world, epoch):
     world.feeds.all_agree(epoch, ELEVATED)
-    assert world.report(epoch, ELEVATED)["verdict"] == VERIFIED
+    world.revert_msg(world.watch, "report_risk", epoch, ELEVATED, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")
+    assert world.view("get_risk_status")["last_applied_epoch"] == 0
+    world.assert_conserved()
 
 
-def test_window_slides_with_applied_epoch(world):
-    world.set_tier(ELEVATED, epoch=5)
-    world.revert_msg(world.watch, "report_risk", 22, CRITICAL, value=BOND, message="ERR_EPOCH_OUT_OF_RANGE")
-    world.feeds.all_agree(21, CRITICAL)
-    assert world.report(21, CRITICAL)["verdict"] == VERIFIED
+def test_epoch_one_bootstraps(world):
+    world.feeds.all_agree(1, ELEVATED)
+    assert world.report(1, ELEVATED)["verdict"] == VERIFIED
+
+
+def test_next_epoch_tracks_the_applied_epoch(world):
+    for ep in (1, 2, 3):
+        world.set_tier(ELEVATED, epoch=ep)
+    for bad in (3, 5, 6, 20):  # replay of 3, then skipping 4
+        world.feeds.all_agree(bad, CRITICAL)
+        world.revert_msg(world.watch, "report_risk", bad, CRITICAL, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")
+    world.feeds.all_agree(4, CRITICAL)
+    assert world.report(4, CRITICAL)["verdict"] == VERIFIED
+
+
+def test_out_of_sequence_epoch_jump_is_strictly_rejected(world):
+    world.set_tier(ELEVATED, epoch=1)
+    world.feeds.all_agree(3, NORMAL)  # epoch 3 is perfectly publishable; it is simply not next
+    world.revert_msg(world.watch, "report_risk", 3, NORMAL, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")
+    assert world.view("get_risk_status")["last_applied_epoch"] == 1
+    assert world.view("get_risk_status")["risk_level"] == ELEVATED
+    assert world.view("get_report_count") == 1  # the reverted call left no record
+    world.assert_conserved()
+
+
+def test_skipping_a_critical_epoch_cannot_hide_it(world):
+    """The finding: 1 -> 3 would let a reporter step over a CRITICAL epoch 2 and
+    land on the calmer epoch 3. The jump is refused; epoch 2 must be applied first."""
+    world.set_tier(ELEVATED, epoch=1)
+    world.feeds.all_agree(2, CRITICAL)
+    world.feeds.all_agree(3, NORMAL)
+    world.revert_msg(world.watch, "report_risk", 3, NORMAL, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")
+    assert world.report(2, CRITICAL)["verdict"] == VERIFIED
+    assert world.view("get_risk_status")["risk_level"] == CRITICAL
+    assert world.report(3, NORMAL)["verdict"] == VERIFIED
+
+
+def test_quorum_failure_does_not_advance_the_sequence(world):
+    world.feeds.serve(1, ("ok", ELEVATED), "down", "down")
+    assert world.report(1, ELEVATED)["verdict"] == QUORUM_FAILURE
+    world.feeds.all_agree(2, ELEVATED)
+    world.revert_msg(world.watch, "report_risk", 2, ELEVATED, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")  # 1 is still next
+    world.vm.clear_mocks()
+    world.feeds.all_agree(1, ELEVATED)
+    assert world.report(1, ELEVATED)["verdict"] == VERIFIED
 
 
 def test_applied_epoch_cannot_be_replayed(world):
-    world.set_tier(ELEVATED, epoch=3)
-    world.revert_msg(world.watch, "report_risk", 3, ELEVATED, value=BOND, message="ERR_EPOCH_OUT_OF_RANGE")
+    for ep in (1, 2, 3):
+        world.set_tier(ELEVATED, epoch=ep)
+    world.revert_msg(world.watch, "report_risk", 3, ELEVATED, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")
 
 
 def test_older_epoch_cannot_roll_the_tier_back(world):
-    world.set_tier(CRITICAL, epoch=4)
+    for ep, lvl in ((1, ELEVATED), (2, ELEVATED), (3, ELEVATED), (4, CRITICAL)):
+        world.set_tier(lvl, epoch=ep)
     world.feeds.all_agree(2, NORMAL)
-    world.revert_msg(world.watch, "report_risk", 2, NORMAL, value=BOND, message="ERR_EPOCH_OUT_OF_RANGE")
+    world.revert_msg(world.watch, "report_risk", 2, NORMAL, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")
     assert world.view("get_risk_status")["risk_level"] == CRITICAL
 
 
@@ -698,7 +784,7 @@ def test_quorum_failure_is_retryable_for_the_same_epoch(world):
 
 def test_stale_lag_then_catch_up(world):
     world.feeds.serve(1, ("ok", CRITICAL), "404", "404")
-    assert world.report(1, CRITICAL)["verdict"] == REJECTED  # two 404s = nothing published yet
+    assert world.report(1, CRITICAL)["verdict"] == QUORUM_FAILURE  # one mirror has it; two lag
     world.vm.clear_mocks()
     world.feeds.all_agree(1, CRITICAL)
     assert world.report(1, CRITICAL, sender=world.watch2)["verdict"] == VERIFIED
@@ -834,7 +920,7 @@ def test_shift_count_tracks_real_changes_only(world):
 def test_two_watchtowers_race_first_verified_wins(world):
     world.feeds.all_agree(1, ELEVATED)
     world.report(1, ELEVATED, sender=world.watch)
-    world.revert_msg(world.watch2, "report_risk", 1, ELEVATED, value=BOND, message="ERR_EPOCH_OUT_OF_RANGE")
+    world.revert_msg(world.watch2, "report_risk", 1, ELEVATED, value=BOND, message="ERR_INVALID_EPOCH_SEQUENCE")
     assert claim_balance(world, world.watch2) == 0
 
 
@@ -2014,7 +2100,7 @@ FIXTURE_CASES = [
     (6, ELEVATED, QUORUM_FAILURE),
     (6, CRITICAL, QUORUM_FAILURE),
     (7, CRITICAL, VERIFIED),
-    (8, ELEVATED, REJECTED),
+    (8, ELEVATED, QUORUM_FAILURE),
     (9, ELEVATED, REJECTED),
     (12, NORMAL, REJECTED),
 ]
@@ -2023,6 +2109,7 @@ FIXTURE_CASES = [
 @pytest.mark.parametrize("epoch,claim,expected", FIXTURE_CASES)
 def test_committed_fixtures_resolve_as_documented(world, epoch, claim, expected):
     serve_fixture_tree(world.vm)
+    world.at_epoch(epoch - 1)  # epoch 6 is deliberately unresolvable, so later epochs need the counter set
     assert world.report(epoch, claim)["verdict"] == expected
 
 

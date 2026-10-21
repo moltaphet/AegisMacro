@@ -6,6 +6,10 @@
  *
  * Epoch 6 in the committed fixtures is a three-way split (A=CRITICAL, B=ELEVATED,
  * C=NORMAL): the contract must answer QUORUM_FAILURE and leave the bond claimable.
+ *
+ * Epochs are strictly sequential: SCENARIO_EPOCH must equal the contract's
+ * last_applied_epoch + 1, so epoch 6 is only reportable once epochs 1..5 have
+ * verified. Against a fresh deployment (applied epoch 1) pass SCENARIO_EPOCH=2.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";

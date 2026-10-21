@@ -10,7 +10,7 @@ not statements from any regulator or central bank. Each scenario is one epoch:
   epoch 5  A+B+C NORMAL except C says CRITICAL        -> NORMAL quorum; CRITICAL claim REJECTED
   epoch 6  A=CRITICAL B=ELEVATED C=NORMAL (3-way split)-> QUORUM_FAILURE for any claim
   epoch 7  A+B publish a CRITICAL record, C malformed -> VERIFIED for claim 2 (bad body ignored)
-  epoch 8  only A published (B and C return 404)      -> REJECTED: two 404s are a "no such event" quorum
+  epoch 8  only A published (B and C return 404)      -> QUORUM_FAILURE: one confirmed + two 404s is CDN lag, bond kept
   any other epoch: no file anywhere -> three 404s     -> REJECTED (fabricated event)
 """
 import json

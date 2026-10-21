@@ -12,7 +12,6 @@ const VERDICT = [
   { name: "QUORUM FAILURE", tone: "bg-elevated/10 text-elevated", note: "bond intact" },
 ] as const;
 
-const EPOCH_WINDOW = 16;
 const LABELS = ["Report risk", "Claim payout"];
 
 export function WatchtowerDesk({ d }: { d: Dashboard }) {
@@ -26,8 +25,8 @@ export function WatchtowerDesk({ d }: { d: Dashboard }) {
   const bondWei = bondText === "" ? bond : parseGen(bondText);
   const problems = useMemo(() => {
     const out: string[] = [];
-    if (!Number.isInteger(epoch) || epoch < last + 1 || epoch > last + EPOCH_WINDOW) {
-      out.push(`Epoch must be a whole number from ${last + 1} to ${last + EPOCH_WINDOW}.`);
+    if (!Number.isInteger(epoch) || epoch !== last + 1) {
+      out.push(`Epoch must be exactly ${last + 1}: epochs are applied strictly in sequence.`);
     }
     if (bondWei === null) out.push("Bond must be a plain decimal amount in GEN.");
     else if (bondWei < bond) out.push(`Bond must be at least ${formatGen(bond, 6)} GEN.`);

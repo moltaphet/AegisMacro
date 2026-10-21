@@ -80,8 +80,16 @@ JSON, wrong epoch, out-of-range tier). Then:
 1. Classify each source.
 2. Tally identical `OK` records — two sources that agree on the same `(tier, event)` are a quorum.
 3. Quorum **on the claimed tier** → `verdict = 1` `VERIFIED_RISK_SHIFT`.
-4. Quorum on a **different** tier, or ≥ 2 × `NOT_FOUND` → `verdict = 0` `REJECTED_REPORT`. These are the **only** two ways to lose a bond.
-5. Everything else — fewer than 2 responses, `1 CONFIRMED + 1 404 (lag) + 1 OUTAGE`, a three-way split, malformed bodies — → `verdict = 2` `QUORUM_FAILURE`: retryable, **bond intact**.
+4. Quorum on a **different** tier, or ≥ 2 × `NOT_FOUND` **with no source confirming the record** → `verdict = 0` `REJECTED_REPORT`. These are the **only** two ways to lose a bond.
+5. Everything else — fewer than 2 responses, a three-way split, malformed bodies, and any mix where **one source confirms and the rest are 404 or down** (`1 CONFIRMED + 2 × 404`, `1 CONFIRMED + 1 404 + 1 OUTAGE`) — → `verdict = 2` `QUORUM_FAILURE`: retryable, **bond intact**.
+
+**404-lag protection.** CDNs publish a commit at different times, so a mirror that does not have the record yet is
+indistinguishable from one that never will. A lone confirming source proves the record *exists*, so the silence
+of the others is treated as lag, never as proof of fabrication: `1 CONFIRMED + 2 × 404` is `QUORUM_FAILURE`, the
+bond is returned to `claimable`, the epoch is not consumed, and the same Watchtower can simply retry once the
+mirrors catch up (`test_one_confirmed_plus_two_404_lags_returns_quorum_failure_without_slashing`). The 2 × 404
+slash still applies when **nothing** confirmed the record (`NOT_FOUND, NOT_FOUND, NOT_FOUND` or
+`NOT_FOUND, NOT_FOUND, OUTAGE`) — that is a fabricated event.
 
 The consensus payload has exactly four fields:
 `{"verdict": int, "risk_level": int, "source_count": int, "announcement_hash": str}`.
@@ -97,8 +105,12 @@ leader cannot forge `verdict=1` with `risk_level=-1`, or a 1-source "quorum".
   the governor has no fund path at all (`test_insurance_reserve_has_no_public_outflow`).
 * **Bounty**: 10% of the bond, paid from `reserve_pool` (the reserve-factor cut of lending interest), only
   when the verified report **changes** the tier, capped by the pool. One bounty per epoch — the first
-  verified report consumes the epoch, so Sybil copies get `ERR_EPOCH_OUT_OF_RANGE`.
-* **Replay / rollback**: an epoch must be strictly greater than the last applied one and at most 16 ahead.
+  verified report consumes the epoch, so Sybil copies get `ERR_INVALID_EPOCH_SEQUENCE`.
+* **Strict epoch sequence**: a report must be for *exactly* `last_applied_epoch + 1` (epoch `1` bootstraps from
+  `0`), otherwise it reverts with `ERR_INVALID_EPOCH_SEQUENCE`. That rules out replay and rollback (an old epoch),
+  and rules out *skipping*: a reporter cannot jump from epoch 1 to epoch 3 to step over a `CRITICAL` epoch 2
+  (`test_out_of_sequence_epoch_jump_is_strictly_rejected`). Only a `VERIFIED` report advances the counter, so a
+  `QUORUM_FAILURE` or `REJECTED` epoch stays "next" and can be retried.
 * **No outage slashing**: a Watchtower can only be slashed on *definitive* contradiction.
 
 ### Governance (minimal by design)
@@ -196,6 +208,14 @@ FEED_SHA=<sha> node --env-file=.env.deploy deploy/deploy_aegis_macro.ts
   genuinely independent publishers per slot (the registry and operator model already allow it).
 * The synthetic fixtures are for demonstration. No LLM is in the consensus path on purpose: structured
   records plus a deterministic quorum rule leave nothing for validators to disagree about except reachability.
+* **Sequential epochs trade liveness for ordering.** Because every epoch must verify before the next can be
+  reported, an epoch the three mirrors can never agree on (a permanent three-way split, or two mirrors that never
+  publish it) halts the oracle at that epoch: there is no skip path, not even for the governor. The committed
+  fixtures contain exactly such an epoch (`6`, a deliberate three-way split) to exercise `QUORUM_FAILURE`. A
+  production deployment should add a timelocked, governor-proposed "skip epoch" escape hatch before relying on this.
+* **A single compromised mirror can no longer be slashed through 404 silence.** `1 CONFIRMED + 2 × 404` is now
+  inconclusive, so a Watchtower colluding with one operator can file such reports without losing its bond (it still
+  cannot change the tier without a 2-source quorum, and pays gas each time).
 * The sandbox has no liquidation engine and no price oracle (single asset).
 * `emit_transfer(..., on="finalized")` settles asynchronously after the transaction; a failure at that later
   stage cannot be caught in-call.

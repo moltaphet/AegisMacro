@@ -20,7 +20,7 @@ ERR_UNAUTHORIZED = "ERR_UNAUTHORIZED"
 ERR_BOND = "ERR_INSUFFICIENT_BOND"
 ERR_PARAM = "ERR_INVALID_PARAM"
 ERR_STATE = "ERR_INVALID_STATE"
-ERR_EPOCH = "ERR_EPOCH_OUT_OF_RANGE"
+ERR_EPOCH_SEQUENCE = "ERR_INVALID_EPOCH_SEQUENCE"
 ERR_FEED = "ERR_INVALID_FEED_SOURCE"
 ERR_TIMELOCK = "ERR_TIMELOCK"
 ERR_LTV = "ERR_LTV_EXCEEDED"
@@ -74,7 +74,6 @@ ATTO = 10**18
 MIN_WATCHTOWER_BOND = ATTO // 5  # 0.2 GEN
 ROTATION_DELAY = 7 * 24 * 3600
 ROTATION_EXPIRY = 7 * 24 * 3600  # an executable proposal goes stale this long after its eta
-EPOCH_LOOKAHEAD = 16  # an epoch may be at most this far past the last applied one
 BOUNTY_BPS = 1000  # 10% of the bond, paid from the reserve pool, only on a real tier change
 SECONDS_PER_YEAR = 365 * 24 * 3600
 INDEX_ONE = 10**18
@@ -242,11 +241,14 @@ def _aggregate(observations: list, claimed_level: int, epoch: int) -> dict:
       2. Tally identical OK records; two sources that agree on the same
          (level, event) are a quorum.
       3. Quorum on the claimed tier -> VERIFIED_RISK_SHIFT (1).
-      4. Quorum on a different tier, or >= 2 NOT_FOUND (fabricated event)
-         -> REJECTED_REPORT (0). The only two ways to lose a bond.
-      5. Anything else (fewer than 2 responses, 1 OK + 1 404 + 1 outage where
-         the down source could still complete a quorum, a three-way split,
-         malformed bodies) -> QUORUM_FAILURE (2): retryable, bond intact.
+      4. Quorum on a different tier, or >= 2 NOT_FOUND with NO source confirming
+         anything (a fabricated event) -> REJECTED_REPORT (0). The only two ways
+         to lose a bond.
+      5. Anything else -> QUORUM_FAILURE (2): retryable, bond intact. That includes
+         fewer than 2 responses, a three-way split, malformed bodies, and any
+         mix where one source CONFIRMS the record and the rest are 404 (CDN lag)
+         or down: the confirming source shows the record exists, so the silence of
+         the others is lag, not proof of fabrication, and it is never slashed.
 
     source_count is the number of definitive responses (OK or NOT_FOUND).
     risk_level is RISK_LEVEL_NONE (-1) unless a record quorum exists."""
@@ -278,7 +280,7 @@ def _aggregate(observations: list, claimed_level: int, epoch: int) -> dict:
             "source_count": responded,
             "announcement_hash": _record_hash(epoch, lvl, ev),
         }
-    if not_found >= QUORUM:
+    if not_found >= QUORUM and ok == 0:
         return {
             "verdict": VERDICT_REJECTED,
             "risk_level": RISK_LEVEL_NONE,
@@ -645,8 +647,10 @@ class AegisMacro(gl.contract.Contract):
         if claim > 2:
             _fail(ERR_PARAM, "claimed_level must be 0..2")
         last = int(self.risk_epoch)
-        if ep < 1 or ep <= last or ep > last + EPOCH_LOOKAHEAD:
-            _fail(ERR_EPOCH, f"epoch must be in {last + 1}..{last + EPOCH_LOOKAHEAD}")
+        # Strictly sequential: no skipping an intervening epoch (which could hide a
+        # CRITICAL one), no replay. Epoch 1 bootstraps from last == 0.
+        if ep != last + 1:
+            _fail(ERR_EPOCH_SEQUENCE, f"epoch must be exactly {last + 1}, the next after last applied epoch {last}")
 
         bases = [self.feed_base[0], self.feed_base[1], self.feed_base[2]]
         payload = self._resolve(bases, ep, claim)

@@ -9,12 +9,12 @@ const CARDS = [
   {
     eyebrow: "02 · Consensus",
     title: "2-of-3, outage-safe",
-    body: "Two sources that agree on the same record make a quorum. Fewer than two answers, or an outage that could still complete a quorum, returns QUORUM_FAILURE: retry, bond intact. Nobody is slashed for a CDN having a bad minute.",
+    body: "Two sources that agree on the same record make a quorum. Fewer than two answers, or an outage that could still complete a quorum, returns QUORUM_FAILURE: retry, bond intact. One source confirming while the others 404 is CDN lag, not fraud: no slash. Epochs must be reported strictly in order.",
   },
   {
     eyebrow: "03 · Skin in the game",
     title: "Bonds, slashing, insurance",
-    body: "Every report stakes at least 0.2 GEN. A report that two independent sources contradict, or that two sources say never happened, forfeits 100% of the bond into a locked insurance reserve the governor cannot touch.",
+    body: "Every report stakes at least 0.2 GEN. A report that two independent sources contradict, or that two sources say never happened while none confirms it, forfeits 100% of the bond into a locked insurance reserve the governor cannot touch.",
   },
   {
     eyebrow: "04 · Circuit breaker",
