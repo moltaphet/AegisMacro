@@ -208,11 +208,31 @@ FEED_SHA=<sha> node --env-file=.env.deploy deploy/deploy_aegis_macro.ts
   genuinely independent publishers per slot (the registry and operator model already allow it).
 * The synthetic fixtures are for demonstration. No LLM is in the consensus path on purpose: structured
   records plus a deterministic quorum rule leave nothing for validators to disagree about except reachability.
-* **Sequential epochs trade liveness for ordering.** Because every epoch must verify before the next can be
-  reported, an epoch the three mirrors can never agree on (a permanent three-way split, or two mirrors that never
-  publish it) halts the oracle at that epoch: there is no skip path, not even for the governor. The committed
-  fixtures contain exactly such an epoch (`6`, a deliberate three-way split) to exercise `QUORUM_FAILURE`. A
-  production deployment should add a timelocked, governor-proposed "skip epoch" escape hatch before relying on this.
+* **Sequential Epoch Deadlock Risk.** Epochs must advance strictly in sequence: `report_risk` accepts only
+  `epoch_id == last_applied_epoch + 1` (epoch `1` bootstraps from `0`) and reverts anything else with
+  `ERR_INVALID_EPOCH_SEQUENCE`. Only a `VERIFIED` report advances `last_applied_epoch`; `QUORUM_FAILURE` and
+  `REJECTED_REPORT` leave the same epoch "next". So if one epoch can never reach a 2-of-3 quorum, **every later
+  epoch is blocked behind it**, however valid its feed records are. Ways that happens:
+  * a **permanent blackout** of that epoch's record (mirrors down, or two of three never serve it);
+  * a **3-source 404**: no mirror ever publishes the record, so every report for it is `REJECTED_REPORT` and
+    slashed, and the epoch never applies;
+  * a **permanent split** (three sources, three different records), which stays `QUORUM_FAILURE`;
+  * an epoch that **all Watchtowers skip**: nobody files for it (nobody can file for a later one instead), so the
+    counter never moves.
+
+  **There is no rescue function in this contract.** The testnet demo has no time-locked epoch skip, no emergency
+  reset and no governor override, so a dead epoch cannot be pruned on-chain, not even by the governor. The only
+  governance lever is feed rotation (`propose_feed_rotation` → 7-day timelock → `execute_feed_rotation`, per slot),
+  which can repoint mirrors at a new commit that publishes a corrected record, so it can unblock a blackout, a
+  404 or a split. But it is a feed fix and not an epoch skip: it takes at least 7 days, needs two slots rotated
+  (a 2-of-3 quorum) and a publisher able to produce the missing record, and it does nothing for an epoch that
+  simply has no record to publish.
+  **Operators must therefore guarantee feed continuity** (publish every epoch's record to all three mirrors, in
+  order, before Watchtowers are expected to report it), **or deploy a fresh contract instance** if an epoch
+  deadlock occurs; the old instance's state and funds are not migrated. The committed fixtures deliberately
+  contain such an epoch (`6`, a three-way split) to exercise `QUORUM_FAILURE`, which is why the fixture tests
+  start later epochs with the test harness's `at_epoch()` helper. A production deployment should add a
+  timelocked, governor-proposed "skip epoch" mechanism before relying on this contract.
 * **A single compromised mirror can no longer be slashed through 404 silence.** `1 CONFIRMED + 2 × 404` is now
   inconclusive, so a Watchtower colluding with one operator can file such reports without losing its bond (it still
   cannot change the tier without a 2-source quorum, and pays gas each time).
